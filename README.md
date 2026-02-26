@@ -2,6 +2,21 @@
 
 A full-stack web application that allows you to securely send documents to cyber cafés for printing without risking your files being saved, copied, or reused.
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="./frontend/public/screenshots/image1.png" width="800"/>
+</p>
+<p align="center">
+  <img src="./frontend/public/screenshots/image2.png" width="800"/>
+</p>
+<p align="center">
+  <img src="./frontend/public/screenshots/image3.png" width="800"/>
+</p>
+<p align="center">
+  <img src="./frontend/public/screenshots/image4.png" width="800"/>
+</p>
+
 ## ✨ Features
 
 - **🛡️ AES-256 Encryption**: Military-grade encryption protects your documents
@@ -39,7 +54,7 @@ A full-stack web application that allows you to securely send documents to cyber
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/rishabhojha22/SecurePrint
    cd secureprint
    ```
 
