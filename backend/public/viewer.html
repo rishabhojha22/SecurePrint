@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Document Viewer</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 2rem;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    width: 100%;
+}
+
+.document-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+}
+
+.document-header {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.document-info {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.document-viewer {
+    width: 100%;
+    height: 85vh;
+}
+
+.document-viewer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.loading {
+    padding: 2rem;
+    text-align: center;
+}
+
+/* PRINT FIX */
+@media print {
+
+    body {
+        background: white;
+    }
+
+    .header,
+    .document-header,
+    .actions {
+        display: none !important;
+    }
+
+    .document-container {
+        box-shadow: none;
+        border: none;
+    }
+
+    .document-viewer {
+        height: auto;
+    }
+
+    .document-viewer iframe {
+        height: 100vh !important;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>🔒 SecurePrint Viewer</h1>
+</div>
+
+<div class="container">
+
+    <div class="document-container">
+
+        <div class="document-header">
+            <div class="document-info" id="documentInfo">
+                Loading document...
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="printDocument()">🖨️ Print</button>
+                <button class="btn btn-danger" onclick="closeDocument()">❌ Close</button>
+            </div>
+        </div>
+
+        <div class="document-viewer" id="documentViewer">
+            <div class="loading">Loading secure document...</div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+
+const accessToken = window.location.pathname.split('/').pop();
+let documentLoaded = false;
+
+async function loadDocument() {
+    try {
+        const response = await fetch(`/api/document/${accessToken}`);
+
+        if (!response.ok) {
+            throw new Error('Document not found');
+        }
+
+        const contentType = response.headers.get('Content-Type');
+        const blob = await response.blob();
+
+        const fileName =
+            response.headers.get('Content-Disposition')
+            ?.split('filename=')[1]
+            ?.replace(/"/g, '') || 'Document';
+
+        document.getElementById('documentInfo')
+            .textContent = `📄 ${fileName}`;
+
+        const viewer = document.getElementById('documentViewer');
+
+        if (contentType === 'application/pdf') {
+
+            const pdfUrl = URL.createObjectURL(blob);
+
+            viewer.innerHTML = `
+                <iframe id="pdfFrame"
+                    src="${pdfUrl}"
+                    type="application/pdf">
+                </iframe>
+            `;
+
+        } else if (contentType.startsWith('image/')) {
+
+            const imageUrl = URL.createObjectURL(blob);
+
+            viewer.innerHTML = `
+                <img src="${imageUrl}"
+                     style="width:100%; height:auto;" />
+            `;
+        }
+
+        documentLoaded = true;
+
+    } catch (error) {
+
+        document.getElementById('documentViewer').innerHTML = `
+            <div style="padding:2rem;text-align:center;color:red;">
+                Document expired or invalid link.
+            </div>
+        `;
+    }
+}
+
+
+/* 🔥 FIXED PRINT FUNCTION */
+function printDocument() {
+
+    if (!documentLoaded) return;
+
+    const iframe = document.getElementById('pdfFrame');
+
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+    } else {
+        window.print();
+    }
+
+    setTimeout(deleteDocument, 3000);
+}
+
+function closeDocument() {
+    if (confirm('Close document? It will be deleted.')) {
+        deleteDocument();
+    }
+}
+
+function deleteDocument() {
+    window.location.href = 'about:blank';
+}
+
+loadDocument();
+
+</script>
+
+</body>
+</html>
